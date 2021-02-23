@@ -18,9 +18,12 @@ package com.github.lburgazzoli.camel.dsl.yaml.common;
 
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
+import com.github.lburgazzoli.camel.dsl.yaml.common.exception.UnsupportedNodeTypeException;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Component;
 import org.apache.camel.ExtendedCamelContext;
@@ -33,9 +36,11 @@ import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.StringHelper;
 import org.apache.camel.util.URISupport;
+import org.snakeyaml.engine.v2.api.ConstructNode;
 import org.snakeyaml.engine.v2.nodes.MappingNode;
 import org.snakeyaml.engine.v2.nodes.Node;
 import org.snakeyaml.engine.v2.nodes.NodeTuple;
+import org.snakeyaml.engine.v2.nodes.NodeType;
 import org.snakeyaml.engine.v2.nodes.SequenceNode;
 
 public final class YamlSupport {
@@ -189,5 +194,41 @@ public final class YamlSupport {
         }
 
         return node;
+    }
+
+    private static String creteEndpointUri(String scheme, Node node) {
+        switch (node.getNodeType()) {
+            case SCALAR:
+                return scheme + ':' + YamlDeserializerSupport.asText(node);
+            case MAPPING:
+                final YamlDeserializationContext dc = YamlDeserializerSupport.getDeserializationContext(node);
+                final MappingNode bn = YamlDeserializerSupport.asMappingNode(node);
+                final Map<String, Object> parameters = new HashMap<>();
+
+                for (NodeTuple tuple : bn.getValue()) {
+                    final String key = YamlDeserializerSupport.asText(tuple.getKeyNode());
+                    final Node val = tuple.getValueNode();
+
+                    if (val.getNodeType() == NodeType.SCALAR) {
+                        parameters.put(StringHelper.dashToCamelCase(key), YamlDeserializerSupport.asText(val));
+                    } else {
+                        throw new UnsupportedNodeTypeException(node);
+                    }
+                }
+
+                return YamlSupport.createEndpointUri(dc.getCamelContext(), scheme, parameters);
+            default:
+                throw new UnsupportedNodeTypeException(node);
+        }
+    }
+
+    public static <T> T creteEndpoint(String scheme, Node node, Function<String, T> constructor) {
+        return constructor.apply(
+            creteEndpointUri(scheme, node)
+        );
+    }
+
+    public static ConstructNode creteEndpointConstructor(String scheme, Function<String, Object> constructor) {
+       return node -> creteEndpoint(scheme, node, constructor);
     }
 }

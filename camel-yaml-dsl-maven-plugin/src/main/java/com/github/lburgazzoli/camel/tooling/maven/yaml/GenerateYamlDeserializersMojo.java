@@ -346,10 +346,7 @@ public class GenerateYamlDeserializersMojo extends GenerateYamlSupportMojo {
         return generateEndpoint(
             "EndpointConsumerDeserializers",
             component -> !component.isProducerOnly(),
-            ClassName.get(
-                "com.github.lburgazzoli.camel.dsl.yaml.common.deserializers",
-                "EndpointDeserializers.From"),
-            false
+            ClassName.get("org.apache.camel.model", "FromDefinition")
         );
     }
 
@@ -357,27 +354,14 @@ public class GenerateYamlDeserializersMojo extends GenerateYamlSupportMojo {
         return generateEndpoint(
             "EndpointProducerDeserializers",
             component -> !component.isConsumerOnly(),
-            ClassName.get(
-                "com.github.lburgazzoli.camel.dsl.yaml.common.deserializers",
-                "EndpointDeserializers.To"),
-            true
+            ClassName.get("org.apache.camel.model", "ToDefinition")
         );
     }
 
     public final Collection<TypeSpec> generateEndpoint(
             String className,
             Predicate<ComponentModel> componentFilter,
-            TypeName superClass,
-            boolean annotate) {
-
-        TypeSpec.Builder deserializers = TypeSpec.classBuilder(className);
-        deserializers.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
-        deserializers.superclass(CN_DESERIALIZER_SUPPORT);
-
-        // add private constructor
-        deserializers.addMethod(MethodSpec.constructorBuilder()
-            .addModifiers(Modifier.PRIVATE)
-            .build());
+            TypeName superClass) {
 
         TypeSpec.Builder resolver = TypeSpec.classBuilder(className + "Resolver");
         resolver.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -393,32 +377,9 @@ public class GenerateYamlDeserializersMojo extends GenerateYamlSupportMojo {
             .flatMap(component -> ToolingSupport.combine(component.getScheme(), component.getAlternativeSchemes()))
             .sorted()
             .distinct()
-            .forEach(scheme -> {
-                String name = scheme.replace('+','-');
-                name = StringHelper.capitalize(name, true);
+            .forEach(scheme -> sw.add("case $S:\n", scheme));
 
-
-                TypeSpec.Builder deserializer = TypeSpec.classBuilder(name)
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                    .superclass(superClass)
-                    .addMethod(
-                        MethodSpec.constructorBuilder()
-                            .addModifiers(Modifier.PUBLIC)
-                            .addStatement("super($S)", scheme)
-                            .build());
-
-                if (annotate) {
-                    deserializer.addAnnotation(
-                        AnnotationSpec.builder(CN_YAML_TYPE)
-                            .addMember("nodes", "$S", scheme)
-                            .build());
-                }
-
-                deserializers.addType(deserializer.build());
-
-                sw.addStatement("case $S: return new $L.$L()", scheme, className, name);
-            });
-
+        sw.addStatement("return com.github.lburgazzoli.camel.dsl.yaml.common.YamlSupport.creteEndpointConstructor(id, $L::new)", superClass);
         sw.endControlFlow();
         sw.addStatement("return null");
 
@@ -446,7 +407,6 @@ public class GenerateYamlDeserializersMojo extends GenerateYamlSupportMojo {
                 .build());
 
         return List.of(
-            deserializers.build(),
             resolver.build()
         );
     }

@@ -35,6 +35,8 @@ import org.snakeyaml.engine.v2.nodes.Node;
 import org.snakeyaml.engine.v2.nodes.NodeTuple;
 import org.snakeyaml.engine.v2.nodes.SequenceNode;
 
+import static com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerSupport.asMap;
+
 
 @YamlType(
     nodes = "any23",
@@ -52,10 +54,8 @@ public class BeansDeserializer implements ConstructNode {
         return YamlSupport.customizer(customizers);
     }
 
-    @SuppressWarnings("unchecked")
     private static CamelContextCustomizer createCustomizer(Node node) {
         final MappingNode bn = YamlDeserializerSupport.asMappingNode(node);
-        final ConstructNode pc = new MapDeserializer();
 
         String name = null;
         String type = null;
@@ -76,7 +76,7 @@ public class BeansDeserializer implements ConstructNode {
                     }
                     break;
                 case "properties":
-                    properties = (Map<String, Object>)pc.construct(val);
+                    properties = asMap(val);
                     break;
                 default:
                     throw new UnsupportedFieldException(val, key);

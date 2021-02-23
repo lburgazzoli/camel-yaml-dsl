@@ -16,50 +16,14 @@
  */
 package com.github.lburgazzoli.camel.dsl.yaml.common.deserializers;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializationContext;
-import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerSupport;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlSupport;
-import com.github.lburgazzoli.camel.dsl.yaml.common.exception.UnsupportedNodeTypeException;
 import org.apache.camel.model.FromDefinition;
 import org.apache.camel.model.ToDefinition;
-import org.apache.camel.util.StringHelper;
 import org.snakeyaml.engine.v2.api.ConstructNode;
-import org.snakeyaml.engine.v2.nodes.MappingNode;
 import org.snakeyaml.engine.v2.nodes.Node;
-import org.snakeyaml.engine.v2.nodes.NodeTuple;
-import org.snakeyaml.engine.v2.nodes.NodeType;
 
 public final class EndpointDeserializers {
     private EndpointDeserializers() {
-    }
-
-    private static String creteEndpointUri(String scheme, Node node) {
-        switch (node.getNodeType()) {
-            case SCALAR:
-                return scheme + ':' + YamlDeserializerSupport.asText(node);
-            case MAPPING:
-                final YamlDeserializationContext dc = YamlDeserializerSupport.getDeserializationContext(node);
-                final MappingNode bn = YamlDeserializerSupport.asMappingNode(node);
-                final Map<String, Object> parameters = new HashMap<>();
-
-                for (NodeTuple tuple : bn.getValue()) {
-                    final String key = YamlDeserializerSupport.asText(tuple.getKeyNode());
-                    final Node val = tuple.getValueNode();
-
-                    if (val.getNodeType() == NodeType.SCALAR) {
-                        parameters.put(StringHelper.dashToCamelCase(key), YamlDeserializerSupport.asText(val));
-                    } else {
-                        throw new UnsupportedNodeTypeException(node);
-                    }
-                }
-
-                return YamlSupport.createEndpointUri(dc.getCamelContext(), scheme, parameters);
-            default:
-                throw new UnsupportedNodeTypeException(node);
-        }
     }
 
     public static class From implements ConstructNode {
@@ -71,7 +35,7 @@ public final class EndpointDeserializers {
 
         @Override
         public Object construct(Node node) {
-            return new FromDefinition(creteEndpointUri(scheme, node));
+            return YamlSupport.creteEndpoint(scheme, node, FromDefinition::new);
         }
     }
 
@@ -84,7 +48,7 @@ public final class EndpointDeserializers {
 
         @Override
         public Object construct(Node node) {
-            return new ToDefinition(creteEndpointUri(scheme, node));
+            return YamlSupport.creteEndpoint(scheme, node, ToDefinition::new);
         }
     }
 }
