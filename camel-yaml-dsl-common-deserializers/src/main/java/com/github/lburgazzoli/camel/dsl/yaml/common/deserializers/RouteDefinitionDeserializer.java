@@ -22,6 +22,7 @@ import com.github.lburgazzoli.camel.dsl.yaml.annotations.YamlType;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializationContext;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerBase;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerResolver;
+import org.apache.camel.model.FromDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.snakeyaml.engine.v2.nodes.MappingNode;
 import org.snakeyaml.engine.v2.nodes.Node;
@@ -70,9 +71,7 @@ public class RouteDefinitionDeserializer extends YamlDeserializerBase<RouteDefin
                     target.setGroup(asText(val));
                     break;
                 case "from":
-                    target.setInput(
-                        FromDefinitionDeserializer.constructFromDefinition(val)
-                    );
+                    target.setInput(asType(val, FromDefinition.class));
                     break;
             }
         }

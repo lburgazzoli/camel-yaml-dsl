@@ -1183,7 +1183,7 @@
       "com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.EndpointProducerDeserializers$Zookeeper" : {
         "type" : "object"
       },
-      "com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.RouteFromDefinitionDeserializer" : {
+      "com.github.lburgazzoli.camel.dsl.yaml.common.model.OutputAwareFromDefinition" : {
         "type" : "object",
         "properties" : {
           "properties" : {
@@ -7695,7 +7695,7 @@
     },
     "properties" : {
       "from" : {
-        "$ref" : "#/items/definitions/com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.RouteFromDefinitionDeserializer"
+        "$ref" : "#/items/definitions/com.github.lburgazzoli.camel.dsl.yaml.common.model.OutputAwareFromDefinition"
       },
       "error-handler" : {
         "$ref" : "#/items/definitions/org.apache.camel.builder.ErrorHandlerBuilderRef"

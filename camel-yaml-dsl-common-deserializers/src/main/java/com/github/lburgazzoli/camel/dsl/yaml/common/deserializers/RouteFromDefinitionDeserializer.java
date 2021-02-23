@@ -25,8 +25,8 @@ import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializationContext;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerBase;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerResolver;
 import com.github.lburgazzoli.camel.dsl.yaml.common.YamlSupport;
+import com.github.lburgazzoli.camel.dsl.yaml.common.model.OutputAwareFromDefinition;
 import org.apache.camel.model.FromDefinition;
-import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.util.ObjectHelper;
 import org.snakeyaml.engine.v2.api.ConstructNode;
 import org.snakeyaml.engine.v2.nodes.MappingNode;
@@ -37,6 +37,7 @@ import org.snakeyaml.engine.v2.nodes.NodeTuple;
 @YamlIn
 @YamlType(
     nodes = "from",
+    types = OutputAwareFromDefinition.class,
     order = YamlDeserializerResolver.ORDER_DEFAULT,
     properties = {
         @YamlProperty(name = "uri", type = "string", required = true),
@@ -44,24 +45,23 @@ import org.snakeyaml.engine.v2.nodes.NodeTuple;
         @YamlProperty(name = "steps", type = "array:step", required = true)
     }
 )
-public class RouteFromDefinitionDeserializer extends YamlDeserializerBase<RouteDefinition> {
+public class RouteFromDefinitionDeserializer extends YamlDeserializerBase<OutputAwareFromDefinition> {
     public RouteFromDefinitionDeserializer() {
-        super(RouteDefinition.class);
+        super(OutputAwareFromDefinition.class);
     }
 
     @Override
-    protected RouteDefinition newInstance() {
-        return new RouteDefinition();
+    protected OutputAwareFromDefinition newInstance() {
+        return new OutputAwareFromDefinition();
     }
 
     @Override
-    protected RouteDefinition newInstance(String value) {
-        return new RouteDefinition(value);
+    protected OutputAwareFromDefinition newInstance(String value) {
+        return new OutputAwareFromDefinition(value);
     }
 
     @Override
-    protected void setProperties(RouteDefinition target, MappingNode node){
-        final EndpointConsumerDeserializersResolver ecdr = new EndpointConsumerDeserializersResolver();
+    protected void setProperties(OutputAwareFromDefinition target, MappingNode node){
         final YamlDeserializationContext dc = getDeserializationContext(node);
 
         String uri = null;
@@ -84,26 +84,23 @@ public class RouteFromDefinitionDeserializer extends YamlDeserializerBase<RouteD
                     properties = asScalarMap(tuple.getValueNode());
                     break;
                 default:
-                    //
-                    // Endpoint DSL
-                    //
-                    ConstructNode cn = ecdr.resolve(key);
+                    ConstructNode cn = EndpointConsumerDeserializersResolver.resolveEndpointConstructor(key);
                     if (cn != null) {
                         if (uri != null || properties != null) {
                             throw new IllegalArgumentException("uri and properties are not supported when using Endpoint DSL ");
                         }
-                        target.setInput((FromDefinition)cn.construct(val));
+                        target.setDelegate((FromDefinition)cn.construct(val));
                     } else {
                         throw new IllegalArgumentException("Unsupported field: " + key);
                     }
             }
         }
 
-        if (target.getInput() == null) {
+        if (target.getDelegate() == null) {
             ObjectHelper.notNull("uri", "The uri must set");
 
-            target.from(
-                YamlSupport.createEndpointUri(dc.getCamelContext(), uri, properties)
+            target.setDelegate(
+                new FromDefinition(YamlSupport.createEndpointUri(dc.getCamelContext(), uri, properties))
             );
         }
     }

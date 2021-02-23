@@ -38,7 +38,6 @@ import static com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializerSuppo
 
 @YamlType(
     inline = true,
-    nodes = "from",
     types = FromDefinition.class,
     order = YamlDeserializerResolver.ORDER_DEFAULT,
     properties = {
@@ -56,9 +55,7 @@ public class FromDefinitionDeserializer implements ConstructNode {
         if (node.getNodeType() == NodeType.SCALAR) {
             return new FromDefinition(asText(node));
         } else if (node.getNodeType() == NodeType.MAPPING) {
-            MappingNode mn = (MappingNode) node;
-
-            final EndpointConsumerDeserializersResolver ecdr = new EndpointConsumerDeserializersResolver();
+            final MappingNode mn = (MappingNode) node;
             final YamlDeserializationContext dc = getDeserializationContext(node);
 
             String uri = null;
@@ -78,10 +75,7 @@ public class FromDefinitionDeserializer implements ConstructNode {
                         properties = asScalarMap(tuple.getValueNode());
                         break;
                     default:
-                        //
-                        // Endpoint DSL
-                        //
-                        ConstructNode cn = ecdr.resolve(key);
+                        ConstructNode cn = EndpointConsumerDeserializersResolver.resolveEndpointConstructor(key);
                         if (cn != null) {
                             if (uri != null || properties != null) {
                                 throw new IllegalArgumentException("uri and properties are not supported when using Endpoint DSL ");

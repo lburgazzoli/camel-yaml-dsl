@@ -430,12 +430,19 @@ public class GenerateYamlDeserializersMojo extends GenerateYamlSupportMojo {
                 .addStatement("return YamlDeserializerResolver.ORDER_LOWEST")
                 .build());
         resolver.addMethod(
+            MethodSpec.methodBuilder("resolveEndpointConstructor")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(String.class, "id")
+                .returns(ConstructNode.class)
+                .addCode(sw.build())
+                .build());
+        resolver.addMethod(
             MethodSpec.methodBuilder("resolve")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(String.class, "id")
                 .returns(ConstructNode.class)
-                .addCode(sw.build())
+                .addStatement("return resolveEndpointConstructor(id)")
                 .build());
 
         return List.of(

@@ -23,10 +23,10 @@ import com.github.lburgazzoli.camel.dsl.yaml.common.YamlDeserializationContext;
 import com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.CustomResolver;
 import com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.EndpointProducerDeserializersResolver;
 import com.github.lburgazzoli.camel.dsl.yaml.common.deserializers.ModelDeserializersResolver;
+import com.github.lburgazzoli.camel.dsl.yaml.common.model.OutputAwareFromDefinition;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.ErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.FromDefinition;
 import org.apache.camel.model.OnExceptionDefinition;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
@@ -102,8 +102,11 @@ public class YamlRoutesBuilderLoader extends RoutesBuilderLoaderSupport {
             }
 
             private void configure(Object item) {
-                if (item instanceof FromDefinition) {
-                    getRouteCollection().route().setInput((FromDefinition) item);
+                if (item instanceof OutputAwareFromDefinition) {
+                    RouteDefinition route = new RouteDefinition();
+                    route.setInput(((OutputAwareFromDefinition)item).getDelegate());
+                    route.setOutputs(((OutputAwareFromDefinition)item).getOutputs());
+                    getRouteCollection().route(route);
                 } else if (item instanceof RouteDefinition) {
                     getRouteCollection().route((RouteDefinition) item);
                 } else if (item instanceof RestDefinition) {

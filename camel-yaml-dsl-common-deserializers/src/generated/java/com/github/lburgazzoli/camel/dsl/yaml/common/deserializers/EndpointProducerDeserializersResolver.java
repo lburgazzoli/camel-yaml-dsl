@@ -11,8 +11,7 @@ public final class EndpointProducerDeserializersResolver implements YamlDeserial
         return YamlDeserializerResolver.ORDER_LOWEST;
     }
 
-    @Override
-    public ConstructNode resolve(String id) {
+    public static ConstructNode resolveEndpointConstructor(String id) {
         switch(id) {
             case "activemq": return new EndpointProducerDeserializers.Activemq();
             case "ahc": return new EndpointProducerDeserializers.Ahc();
@@ -343,5 +342,10 @@ public final class EndpointProducerDeserializersResolver implements YamlDeserial
             case "zookeeper": return new EndpointProducerDeserializers.Zookeeper();
         }
         return null;
+    }
+
+    @Override
+    public ConstructNode resolve(String id) {
+        return resolveEndpointConstructor(id);
     }
 }

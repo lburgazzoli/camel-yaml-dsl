@@ -57,7 +57,6 @@ public class SagaActionUriDefinitionDeserializer extends YamlDeserializerBase<Sa
 
     @Override
     protected void setProperties(SagaActionUriDefinition target, MappingNode node){
-        final EndpointProducerDeserializersResolver epdr = new EndpointProducerDeserializersResolver();
         final YamlDeserializationContext dc = getDeserializationContext(node);
 
         String uri = null;
@@ -80,10 +79,7 @@ public class SagaActionUriDefinitionDeserializer extends YamlDeserializerBase<Sa
                     properties = YamlDeserializerSupport.asScalarMap(tuple.getValueNode());
                     break;
                 default:
-                    //
-                    // Endpoint DSL
-                    //
-                    ConstructNode cn = epdr.resolve(key);
+                    ConstructNode cn = EndpointProducerDeserializersResolver.resolveEndpointConstructor(key);
                     if (cn != null) {
                         if (uri != null || properties != null) {
                             throw new IllegalArgumentException("uri and properties are not supported when using Endpoint DSL ");
